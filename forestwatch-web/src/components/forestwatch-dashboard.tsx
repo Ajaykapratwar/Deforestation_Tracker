@@ -124,6 +124,7 @@ export default function ForestWatchDashboard() {
   const [alertFlash, setAlertFlash] = useState(false);
   const [saved, setSaved] = useState<SavedRegion[]>([]);
   const [alertThreshold, setAlertThreshold] = useState(12);
+  const [ndviThreshold, setNdviThreshold] = useState(-0.07);
 
   useEffect(() => {
     try {
@@ -162,6 +163,7 @@ export default function ForestWatchDashboard() {
         radius_km: radius,
         start_date: startDate,
         end_date: endDate,
+        ndvi_threshold: ndviThreshold,
       });
       setData(res);
       if (res.analytics.vegetation_loss_percent >= alertThreshold) {
@@ -215,6 +217,7 @@ export default function ForestWatchDashboard() {
         radius_km: radius,
         start_date: startDate,
         end_date: endDate,
+        ndvi_threshold: ndviThreshold,
       });
       const blob = new Blob([JSON.stringify(gj, null, 2)], { type: "application/geo+json" });
       const u = URL.createObjectURL(blob);
@@ -461,6 +464,26 @@ export default function ForestWatchDashboard() {
                 Short-term analysis may be affected by seasonal vegetation changes.
               </p>
             )}
+          </div>
+
+ 
+           <div className={PANEL}>
+            <div className="mb-2 text-sm font-medium text-slate-700">Sensitivity settings</div>
+            <div className="flex justify-between">
+              <Label>NDVI Loss Threshold · {ndviThreshold.toFixed(2)}</Label>
+            </div>
+            <Slider
+              className="mt-2"
+              value={[ndviThreshold]}
+              onValueChange={(v) => setNdviThreshold(v[0])}
+              min={-0.5}
+              max={-0.01}
+              step={0.01}
+            />
+            <p className="mt-2 text-[10px] leading-relaxed text-slate-500">
+              Lower (more negative) values are less sensitive (detect only major clearing). 
+              Higher (closer to zero) values detect subtle thinning.
+            </p>
           </div>
 
           <div className={PANEL}>

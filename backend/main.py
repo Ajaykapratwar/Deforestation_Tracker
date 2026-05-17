@@ -51,6 +51,7 @@ class AnalyzeRequest(BaseModel):
     radius_km: float = Field(15, ge=5, le=50)
     start_date: str = Field(..., description="ISO date YYYY-MM-DD")
     end_date: str = Field(..., description="ISO date YYYY-MM-DD")
+    ndvi_threshold: float = Field(-0.07, ge=-1.0, le=1.0)
 
 
 @app.get("/health")
@@ -93,6 +94,7 @@ def analyze(body: AnalyzeRequest) -> dict[str, Any]:
             radius_km=body.radius_km,
             start_date=body.start_date,
             end_date=body.end_date,
+            ndvi_threshold=body.ndvi_threshold,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
@@ -121,6 +123,7 @@ def export_geojson(body: AnalyzeRequest) -> dict[str, Any]:
             radius_km=body.radius_km,
             start_date=body.start_date,
             end_date=body.end_date,
+            ndvi_threshold=body.ndvi_threshold,
         )
         gj = result.get("hotspots_geojson")
         if not gj:

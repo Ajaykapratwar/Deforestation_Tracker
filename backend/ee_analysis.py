@@ -10,7 +10,7 @@ from typing import Any
 import ee
 
 
-NDVI_LOSS_THRESHOLD = -0.07
+
 
 
 class EarthEngineConfigurationError(RuntimeError):
@@ -144,7 +144,8 @@ def _duration_days(start: dt.date, end: dt.date) -> int:
 
 
 def _use_sentinel(start: dt.date, end: dt.date) -> bool:
-    return _duration_days(start, end) <= 366
+    # Always use Landsat 8/9 — Sentinel-2 is no longer used.
+    return False
 
 
 def _mask_s2_clouds(img: ee.Image) -> ee.Image:
@@ -324,10 +325,11 @@ def _build_insights(
     loss_km2: float,
     mean_change: float | None,
     duration_label: str,
+    ndvi_threshold: float,
 ) -> dict[str, Any]:
     summary_parts = [
         f"Over {duration_label}, the selected area shows approximately {loss_pct:.1f}% vegetation loss "
-        f"across roughly {loss_km2:.2f} km² of declining NDVI (threshold {NDVI_LOSS_THRESHOLD})."
+        f"across roughly {loss_km2:.2f} km² of declining NDVI (threshold {ndvi_threshold})."
     ]
     if mean_change is not None:
         summary_parts.append(f"Mean NDVI change is {mean_change:+.3f}.")
@@ -373,6 +375,7 @@ def run_analysis(
     radius_km: float,
     start_date: str,
     end_date: str,
+    ndvi_threshold: float = -0.07,
 ) -> dict[str, Any]:
     _init_ee(project_id)
 
@@ -391,7 +394,7 @@ def run_analysis(
     ndvi_after = _composite_and_ndvi(region, a0, a1, sentinel)
     ndvi_change = ndvi_after.subtract(ndvi_before)
 
-    loss_mask = ndvi_change.lt(NDVI_LOSS_THRESHOLD)
+    loss_mask = ndvi_change.lt(ndvi_threshold)
     loss_layer = ndvi_change.updateMask(loss_mask)
 
     vis_ndvi = {"bands": ["NDVI"], "min": 0, "max": 0.8, "palette": ["#ffffff", "#22c55e"]}
@@ -459,7 +462,7 @@ def run_analysis(
             "Prefer ≥12-month windows or interpret alongside phenology."
         )
 
-    insights = _build_insights(loss_pct, loss_km2, mean_change, duration_label)
+    insights = _build_insights(loss_pct, loss_km2, mean_change, duration_label, ndvi_threshold)
 
     def _thumb(img: ee.Image, vis: dict[str, Any]) -> str:
         pals = vis.get("palette") or []
@@ -513,6 +516,6 @@ def run_analysis(
         "eco_score": _eco_score(mean_after, loss_pct),
         "warning": warning,
         "hotspots_geojson": fc_geojson,
-        "threshold_ndvi_change": NDVI_LOSS_THRESHOLD,
+        "threshold_ndvi_change": ndvi_threshold,
         "exports": {"png": exports_png},
     }

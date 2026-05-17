@@ -49,6 +49,7 @@ export async function analyzeRegion(body: {
   radius_km: number;
   start_date: string;
   end_date: string;
+  ndvi_threshold?: number;
 }): Promise<AnalyzeResponse> {
   const res = await fetch(`${API_BASE}/analyze`, {
     method: "POST",
@@ -68,6 +69,7 @@ export async function fetchHotspotGeoJSON(body: {
   radius_km: number;
   start_date: string;
   end_date: string;
+  ndvi_threshold?: number;
 }): Promise<GeoJSON.FeatureCollection> {
   const res = await fetch(`${API_BASE}/export/geojson`, {
     method: "POST",
